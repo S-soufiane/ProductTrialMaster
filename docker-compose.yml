@@ -1,0 +1,41 @@
+services:
+  api_db:
+    image: postgres:16-alpine
+    container_name: api_db
+    environment:
+      POSTGRES_DB: api_db_main
+      POSTGRES_USER: symfony
+      POSTGRES_PASSWORD: symfony
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - back_network
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U symfony -d api_db_main"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api_back:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    container_name: api_back
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "8000:8000"
+    networks:
+      - back_network
+    depends_on:
+      api_db:
+        condition: service_healthy
+
+networks:
+  back_network:
+    driver: bridge
+
+volumes:
+  db_data:
